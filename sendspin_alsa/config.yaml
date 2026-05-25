@@ -1,0 +1,33 @@
+name: Sendspin ALSA Player
+version: "0.1.0"
+slug: sendspin_alsa
+description: Sendspin synchronized audio player for ALSA / USB audio devices
+url: https://github.com/firstchair/ha-addon-sendspin-alsa
+arch:
+  - amd64
+  - aarch64
+init: false
+startup: services
+boot: auto
+audio: true
+host_network: true
+privileged:
+  - SYS_ADMIN
+map:
+  - addon_config:rw
+options:
+  name: "USB Speaker"
+  client_id: "sendspin-ha-alsa"
+  audio_device: ""
+  audio_format: "flac:48000:16:2"
+  static_delay_ms: 0
+  server_url: ""
+  log_level: "INFO"
+schema:
+  name: str
+  client_id: str
+  audio_device: str?
+  audio_format: str?
+  static_delay_ms: int(0,5000)?
+  server_url: str?
+  log_level: list(DEBUG|INFO|WARNING|ERROR|CRITICAL)?
