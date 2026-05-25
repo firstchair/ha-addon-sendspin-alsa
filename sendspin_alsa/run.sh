@@ -11,6 +11,27 @@ STATIC_DELAY=$(jq -r '.static_delay_ms // 0' "$OPTIONS")
 SERVER_URL=$(jq -r '.server_url // ""' "$OPTIONS")
 LOG_LEVEL=$(jq -r '.log_level // "INFO"' "$OPTIONS")
 
+echo "=================================================="
+echo "[sendspin-alsa] Audio environment diagnostics"
+echo "=================================================="
+echo "--- env vars ---"
+env | grep -iE "(pulse|audio|alsa)" || echo "(no audio-related env vars)"
+echo "--- /run mounts ---"
+ls -la /run/ 2>/dev/null | grep -iE "(audio|pulse)" || echo "(none under /run)"
+echo "--- /etc/pulse ---"
+ls -la /etc/pulse/ 2>/dev/null || echo "(no /etc/pulse)"
+echo "--- /etc/asound.conf ---"
+cat /etc/asound.conf 2>/dev/null || echo "(no /etc/asound.conf)"
+echo "--- aplay -L (ALSA PCM devices) ---"
+aplay -L 2>&1 | head -40 || true
+echo "--- pactl info (PulseAudio status) ---"
+pactl info 2>&1 | head -10 || true
+echo "--- pactl list sinks short ---"
+pactl list sinks short 2>&1 | head -10 || true
+echo "--- sendspin audio-devices list ---"
+sendspin audio-devices list 2>&1 | head -40 || true
+echo "=================================================="
+
 CONFIG_DIR="/root/.config/sendspin"
 mkdir -p "$CONFIG_DIR"
 
@@ -28,7 +49,5 @@ cat > "$CONFIG_DIR/settings-daemon.json" <<EOF
 }
 EOF
 
-echo "[sendspin-alsa] PulseAudio: ${PULSE_SERVER:-not-set} | output sink: ${AUDIO_OUTPUT:-default}"
 echo "[sendspin-alsa] Starting daemon as: ${NAME} (id=${CLIENT_ID})"
-
 exec sendspin daemon
