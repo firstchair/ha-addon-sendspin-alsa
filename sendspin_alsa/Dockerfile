@@ -12,6 +12,7 @@ RUN apk add --no-cache \
         libsndfile \
         alsa-utils \
         pulseaudio-utils \
+        alsa-plugins-pulse \
     && apk add --no-cache --virtual .build-deps \
         gcc \
         musl-dev \

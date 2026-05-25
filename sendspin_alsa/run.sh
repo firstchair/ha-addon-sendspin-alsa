@@ -11,35 +11,41 @@ STATIC_DELAY=$(jq -r '.static_delay_ms // 0' "$OPTIONS")
 SERVER_URL=$(jq -r '.server_url // ""' "$OPTIONS")
 LOG_LEVEL=$(jq -r '.log_level // "INFO"' "$OPTIONS")
 
+# Point audio libraries at the Supervisor PulseAudio socket
+export PULSE_SERVER=unix:/run/audio/pulse.sock
+
 echo "=================================================="
 echo "[sendspin-alsa] Audio environment diagnostics"
 echo "=================================================="
 echo "--- env vars ---"
 env | grep -iE "(pulse|audio|alsa)" || echo "(no audio-related env vars)"
-echo "--- /run mounts ---"
-ls -la /run/ 2>/dev/null | grep -iE "(audio|pulse)" || echo "(none under /run)"
-echo "--- /etc/pulse ---"
-ls -la /etc/pulse/ 2>/dev/null || echo "(no /etc/pulse)"
+echo "--- /run/audio ---"
+ls -la /run/audio/ 2>/dev/null || echo "(no /run/audio)"
 echo "--- /etc/asound.conf ---"
 cat /etc/asound.conf 2>/dev/null || echo "(no /etc/asound.conf)"
-echo "--- aplay -L (ALSA PCM devices) ---"
-aplay -L 2>&1 | head -40 || true
-echo "--- pactl info (PulseAudio status) ---"
-pactl info 2>&1 | head -10 || true
+echo "--- aplay -D default (open test) ---"
+aplay -D default /dev/null 2>&1 | head -5 || true
 echo "--- pactl list sinks short ---"
 pactl list sinks short 2>&1 | head -10 || true
-echo "--- sendspin audio-devices list ---"
-sendspin audio-devices list 2>&1 | head -40 || true
+echo "--- sendspin --list-audio-devices ---"
+sendspin --list-audio-devices 2>&1 || true
 echo "=================================================="
 
 CONFIG_DIR="/root/.config/sendspin"
 mkdir -p "$CONFIG_DIR"
 
+# Write audio_device as null when empty so sendspin auto-selects default device
+if [ -z "$AUDIO_DEVICE" ]; then
+  AUDIO_DEVICE_JSON="null"
+else
+  AUDIO_DEVICE_JSON="\"$AUDIO_DEVICE\""
+fi
+
 cat > "$CONFIG_DIR/settings-daemon.json" <<EOF
 {
   "name": "${NAME}",
   "client_id": "${CLIENT_ID}",
-  "audio_device": "${AUDIO_DEVICE}",
+  "audio_device": ${AUDIO_DEVICE_JSON},
   "audio_format": "${AUDIO_FORMAT}",
   "static_delay_ms": ${STATIC_DELAY},
   "last_server_url": "${SERVER_URL}",
