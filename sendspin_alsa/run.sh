@@ -14,6 +14,11 @@ LOG_LEVEL=$(jq -r '.log_level // "INFO"' "$OPTIONS")
 # Point audio libraries at the Supervisor PulseAudio socket
 export PULSE_SERVER=unix:/run/audio/pulse.sock
 
+# Request a 200ms latency buffer from PulseAudio via the ALSA pulse plugin.
+# Default is ~25ms which causes underruns in the cross-container audio path
+# (sendspin -> ALSA -> pulse plugin -> hassio-audio container -> USB DAC).
+export PULSE_LATENCY_MSEC=200
+
 echo "=================================================="
 echo "[sendspin-alsa] Audio environment diagnostics"
 echo "=================================================="
